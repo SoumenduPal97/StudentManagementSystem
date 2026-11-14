@@ -114,3 +114,8 @@ GitHub: https://github.com/SoumenduPal97
 ## License
 
 This project is created for educational and placement preparation purposes.
+
+
+## Application Screenshots
+
+![Student Management Dashboard](screenshots/student-management-dashboard.png)
