@@ -10,19 +10,23 @@ import java.awt.*;
 import java.sql.SQLException;
 import java.util.List;
 
-
 public class StudentManagementGUI extends JFrame {
 
     private final StudentDAO studentDAO = new StudentDAO();
 
     private final JTextField rollField = new JTextField(15);
     private final JTextField nameField = new JTextField(15);
+    private final JTextField emailField = new JTextField(15);
+    private final JTextField phoneField = new JTextField(15);
     private final JTextField courseField = new JTextField(15);
     private final JTextField marksField = new JTextField(15);
 
     private final DefaultTableModel tableModel =
             new DefaultTableModel(
-                    new String[]{"Roll Number", "Name", "Course", "Marks"}, 0
+                    new String[]{
+                            "Roll Number", "Name", "Email",
+                            "Phone", "Course", "Marks"
+                    }, 0
             ) {
                 @Override
                 public boolean isCellEditable(int row, int column) {
@@ -34,9 +38,9 @@ public class StudentManagementGUI extends JFrame {
 
     public StudentManagementGUI() {
 
-        setTitle("Student Management System");
-        setSize(950, 650);
-        setMinimumSize(new Dimension(750, 500));
+        setTitle("Student Management System - Version 2.0");
+        setSize(1100, 720);
+        setMinimumSize(new Dimension(850, 550));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
@@ -47,12 +51,9 @@ public class StudentManagementGUI extends JFrame {
         add(createMainPanel(), BorderLayout.CENTER);
 
         configureTable();
-
-        // Load records from MySQL when the window opens
         refreshStudents();
     }
 
-    // Header
     private JPanel createHeader() {
 
         JPanel header = new JPanel(new BorderLayout());
@@ -61,15 +62,14 @@ public class StudentManagementGUI extends JFrame {
                 BorderFactory.createEmptyBorder(20, 25, 20, 25)
         );
 
-        JLabel title = new JLabel("STUDENT MANAGEMENT SYSTEM");
+        JLabel title = new JLabel("STUDENT MANAGEMENT SYSTEM 2.0");
         title.setForeground(Color.WHITE);
-        title.setFont(new Font("Arial", Font.BOLD, 25));
+        title.setFont(new Font("Arial", Font.BOLD, 24));
 
         JLabel subtitle = new JLabel(
-                "Manage student records using Java and MySQL"
+                "Manage student profiles and academic information"
         );
         subtitle.setForeground(Color.LIGHT_GRAY);
-        subtitle.setFont(new Font("Arial", Font.PLAIN, 13));
 
         JPanel textPanel = new JPanel(new GridLayout(2, 1, 0, 5));
         textPanel.setOpaque(false);
@@ -81,7 +81,6 @@ public class StudentManagementGUI extends JFrame {
         return header;
     }
 
-    // Main panel
     private JPanel createMainPanel() {
 
         JPanel mainPanel = new JPanel(new BorderLayout(12, 15));
@@ -93,7 +92,7 @@ public class StudentManagementGUI extends JFrame {
         JPanel topPanel = new JPanel(new BorderLayout(10, 12));
         topPanel.setOpaque(false);
 
-        JPanel formPanel = new JPanel(new GridLayout(2, 2, 15, 10));
+        JPanel formPanel = new JPanel(new GridLayout(3, 2, 15, 12));
         formPanel.setBackground(Color.WHITE);
         formPanel.setBorder(
                 BorderFactory.createTitledBorder("Student Information")
@@ -101,11 +100,13 @@ public class StudentManagementGUI extends JFrame {
 
         formPanel.add(createFieldPanel("Roll Number", rollField));
         formPanel.add(createFieldPanel("Student Name", nameField));
+        formPanel.add(createFieldPanel("Email Address", emailField));
+        formPanel.add(createFieldPanel("Phone Number", phoneField));
         formPanel.add(createFieldPanel("Course", courseField));
         formPanel.add(createFieldPanel("Marks", marksField));
 
         JPanel buttonPanel = new JPanel(
-                new FlowLayout(FlowLayout.CENTER, 10, 5)
+                new FlowLayout(FlowLayout.CENTER, 8, 5)
         );
         buttonPanel.setOpaque(false);
 
@@ -151,7 +152,6 @@ public class StudentManagementGUI extends JFrame {
         return mainPanel;
     }
 
-    // Create input field panel
     private JPanel createFieldPanel(String label, JTextField field) {
 
         JPanel panel = new JPanel(new BorderLayout(5, 5));
@@ -168,7 +168,6 @@ public class StudentManagementGUI extends JFrame {
         return panel;
     }
 
-    // Button styling
     private void styleButton(JButton button, Color color) {
 
         button.setBackground(color);
@@ -180,7 +179,6 @@ public class StudentManagementGUI extends JFrame {
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
     }
 
-    // Table configuration
     private void configureTable() {
 
         studentTable.setRowHeight(27);
@@ -193,10 +191,6 @@ public class StudentManagementGUI extends JFrame {
                 new Font("Arial", Font.BOLD, 13)
         );
 
-        studentTable.setSelectionBackground(
-                new Color(187, 222, 251)
-        );
-
         studentTable.getSelectionModel().addListSelectionListener(e -> {
 
             if (!e.getValueIsAdjusting()) {
@@ -204,39 +198,60 @@ public class StudentManagementGUI extends JFrame {
                 int row = studentTable.getSelectedRow();
 
                 if (row >= 0) {
-                    rollField.setText(
-                            tableModel.getValueAt(row, 0).toString()
-                    );
-
-                    nameField.setText(
-                            tableModel.getValueAt(row, 1).toString()
-                    );
-
-                    courseField.setText(
-                            tableModel.getValueAt(row, 2).toString()
-                    );
-
-                    marksField.setText(
-                            tableModel.getValueAt(row, 3).toString()
-                    );
+                    rollField.setText(getCellText(row, 0));
+                    nameField.setText(getCellText(row, 1));
+                    emailField.setText(getCellText(row, 2));
+                    phoneField.setText(getCellText(row, 3));
+                    courseField.setText(getCellText(row, 4));
+                    marksField.setText(getCellText(row, 5));
                 }
             }
         });
     }
 
-    // Validate form and create Student object
+    private String getCellText(int row, int column) {
+
+        Object value = tableModel.getValueAt(row, column);
+
+        return value == null ? "" : value.toString();
+    }
+
     private Student getStudentFromForm() {
 
         String roll = rollField.getText().trim();
         String name = nameField.getText().trim();
+        String email = emailField.getText().trim();
+        String phone = phoneField.getText().trim();
         String course = courseField.getText().trim();
         String marksText = marksField.getText().trim();
 
         if (roll.isEmpty() || name.isEmpty()
+                || email.isEmpty() || phone.isEmpty()
                 || course.isEmpty() || marksText.isEmpty()) {
 
             JOptionPane.showMessageDialog(
                     this, "Please fill in all fields."
+            );
+
+            return null;
+        }
+
+        String emailRegex =
+                "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
+
+        if (!email.matches(emailRegex)) {
+
+            JOptionPane.showMessageDialog(
+                    this, "Please enter a valid email address."
+            );
+
+            return null;
+        }
+
+        if (!phone.matches("\\+?[0-9]{10,15}")) {
+
+            JOptionPane.showMessageDialog(
+                    this, "Enter a valid phone number (10-15 digits)."
             );
 
             return null;
@@ -255,7 +270,9 @@ public class StudentManagementGUI extends JFrame {
                 return null;
             }
 
-            return new Student(roll, name, course, marks);
+            return new Student(
+                    roll, name, email, phone, course, marks
+            );
 
         } catch (NumberFormatException e) {
 
@@ -267,7 +284,6 @@ public class StudentManagementGUI extends JFrame {
         }
     }
 
-    // Add Student
     private void addStudent() {
 
         Student student = getStudentFromForm();
@@ -303,7 +319,6 @@ public class StudentManagementGUI extends JFrame {
         }
     }
 
-    // View All Students
     private void refreshStudents() {
 
         try {
@@ -317,6 +332,8 @@ public class StudentManagementGUI extends JFrame {
                 tableModel.addRow(new Object[]{
                         student.getRollNumber(),
                         student.getName(),
+                        student.getEmail(),
+                        student.getPhone(),
                         student.getCourse(),
                         String.format("%.2f", student.getMarks())
                 });
@@ -327,7 +344,6 @@ public class StudentManagementGUI extends JFrame {
         }
     }
 
-    // Search Student
     private void searchStudent() {
 
         String roll = rollField.getText().trim();
@@ -353,12 +369,15 @@ public class StudentManagementGUI extends JFrame {
                         this, "Student not found."
                 );
 
+                clearFields();
                 return;
             }
 
             tableModel.addRow(new Object[]{
                     student.getRollNumber(),
                     student.getName(),
+                    student.getEmail(),
+                    student.getPhone(),
                     student.getCourse(),
                     String.format("%.2f", student.getMarks())
             });
@@ -370,7 +389,6 @@ public class StudentManagementGUI extends JFrame {
         }
     }
 
-    // Update Student
     private void updateStudent() {
 
         Student student = getStudentFromForm();
@@ -384,6 +402,8 @@ public class StudentManagementGUI extends JFrame {
             boolean updated = studentDAO.updateStudent(
                     student.getRollNumber(),
                     student.getName(),
+                    student.getEmail(),
+                    student.getPhone(),
                     student.getCourse(),
                     student.getMarks()
             );
@@ -409,7 +429,6 @@ public class StudentManagementGUI extends JFrame {
         }
     }
 
-    // Delete Student
     private void deleteStudent() {
 
         String roll = rollField.getText().trim();
@@ -459,27 +478,32 @@ public class StudentManagementGUI extends JFrame {
         }
     }
 
-    // Fill input fields from selected student
     private void fillFields(Student student) {
 
         rollField.setText(student.getRollNumber());
         nameField.setText(student.getName());
+        emailField.setText(
+                student.getEmail() == null ? "" : student.getEmail()
+        );
+        phoneField.setText(
+                student.getPhone() == null ? "" : student.getPhone()
+        );
         courseField.setText(student.getCourse());
         marksField.setText(String.valueOf(student.getMarks()));
     }
 
-    // Clear all fields
     private void clearFields() {
 
         rollField.setText("");
         nameField.setText("");
+        emailField.setText("");
+        phoneField.setText("");
         courseField.setText("");
         marksField.setText("");
 
         studentTable.clearSelection();
     }
 
-    // Show database errors
     private void showDatabaseError(SQLException e) {
 
         JOptionPane.showMessageDialog(
@@ -490,7 +514,6 @@ public class StudentManagementGUI extends JFrame {
         );
     }
 
-    // Application starting point
     public static void main(String[] args) {
 
         SwingUtilities.invokeLater(() -> {

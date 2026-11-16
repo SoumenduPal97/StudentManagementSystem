@@ -8,7 +8,6 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Scanner;
 
-
 public class Main {
 
     private static final Scanner sc = new Scanner(System.in);
@@ -21,7 +20,7 @@ public class Main {
         while (running) {
 
             System.out.println("\n================================");
-            System.out.println("     STUDENT MANAGEMENT SYSTEM");
+            System.out.println("     STUDENT MANAGEMENT SYSTEM 2.0");
             System.out.println("================================");
 
             System.out.println("1. Add Student");
@@ -78,7 +77,6 @@ public class Main {
         sc.close();
     }
 
-    // Add Student
     private static void addStudent() throws SQLException {
 
         System.out.println("\n--- Add Student ---");
@@ -86,33 +84,33 @@ public class Main {
         System.out.print("Enter Roll Number: ");
         String roll = readNonEmpty();
 
-        // Check whether roll number already exists
         if (studentDAO.searchStudent(roll) != null) {
-            System.out.println("A student with this roll number already exists.");
+            System.out.println("This roll number already exists.");
             return;
         }
 
         System.out.print("Enter Student Name: ");
         String name = readNonEmpty();
 
+        String email = readEmail();
+        String phone = readPhone();
+
         System.out.print("Enter Course: ");
         String course = readNonEmpty();
 
-        System.out.print("Enter Marks: ");
         double marks = readMarks();
 
-        Student student = new Student(roll, name, course, marks);
+        Student student = new Student(
+                roll, name, email, phone, course, marks
+        );
 
-        boolean added = studentDAO.addStudent(student);
-
-        if (added) {
+        if (studentDAO.addStudent(student)) {
             System.out.println("Student added successfully!");
         } else {
             System.out.println("Unable to add student.");
         }
     }
 
-    // View All Students
     private static void viewStudents() throws SQLException {
 
         System.out.println("\n--- Student Records ---");
@@ -124,22 +122,29 @@ public class Main {
             return;
         }
 
-        System.out.printf("%-15s %-20s %-20s %-10s%n",
-                "Roll Number", "Name", "Course", "Marks");
+        System.out.printf(
+                "%-12s %-18s %-25s %-15s %-18s %-8s%n",
+                "Roll No.", "Name", "Email", "Phone", "Course", "Marks"
+        );
 
-        System.out.println("----------------------------------------------------------------");
+        System.out.println(
+                "-------------------------------------------------------------------------------------------------------------"
+        );
 
         for (Student student : students) {
 
-            System.out.printf("%-15s %-20s %-20s %-10.2f%n",
+            System.out.printf(
+                    "%-12s %-18s %-25s %-15s %-18s %-8.2f%n",
                     student.getRollNumber(),
                     student.getName(),
+                    student.getEmail() == null ? "" : student.getEmail(),
+                    student.getPhone() == null ? "" : student.getPhone(),
                     student.getCourse(),
-                    student.getMarks());
+                    student.getMarks()
+            );
         }
     }
 
-    // Search Student
     private static void searchStudent() throws SQLException {
 
         System.out.print("\nEnter Roll Number to Search: ");
@@ -155,7 +160,6 @@ public class Main {
         }
     }
 
-    // Update Student
     private static void updateStudent() throws SQLException {
 
         System.out.print("\nEnter Roll Number to Update: ");
@@ -171,14 +175,17 @@ public class Main {
         System.out.print("Enter New Name: ");
         String name = readNonEmpty();
 
+        String email = readEmail();
+        String phone = readPhone();
+
         System.out.print("Enter New Course: ");
         String course = readNonEmpty();
 
-        System.out.print("Enter New Marks: ");
         double marks = readMarks();
 
         boolean updated = studentDAO.updateStudent(
-                roll, name, course, marks);
+                roll, name, email, phone, course, marks
+        );
 
         if (updated) {
             System.out.println("Student updated successfully!");
@@ -187,7 +194,6 @@ public class Main {
         }
     }
 
-    // Delete Student
     private static void deleteStudent() throws SQLException {
 
         System.out.print("\nEnter Roll Number to Delete: ");
@@ -202,16 +208,16 @@ public class Main {
         }
     }
 
-    // Display Student Details
     private static void showDetails(Student student) {
 
         System.out.println("Roll Number: " + student.getRollNumber());
         System.out.println("Name: " + student.getName());
+        System.out.println("Email: " + student.getEmail());
+        System.out.println("Phone: " + student.getPhone());
         System.out.println("Course: " + student.getCourse());
         System.out.println("Marks: " + student.getMarks());
     }
 
-    // Read Integer Input
     private static int readInt() {
 
         while (true) {
@@ -225,7 +231,6 @@ public class Main {
         }
     }
 
-    // Read Non-empty Text
     private static String readNonEmpty() {
 
         while (true) {
@@ -240,24 +245,60 @@ public class Main {
         }
     }
 
-    // Read Marks
+    private static String readEmail() {
+
+        while (true) {
+
+            System.out.print("Enter Email Address: ");
+            String email = readNonEmpty();
+
+            if (email.matches(
+                    "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
+                return email;
+            }
+
+            System.out.println("Please enter a valid email address.");
+        }
+    }
+
+    private static String readPhone() {
+
+        while (true) {
+
+            System.out.print("Enter Phone Number: ");
+            String phone = readNonEmpty();
+
+            if (phone.matches("\\+?[0-9]{10,15}")) {
+                return phone;
+            }
+
+            System.out.println(
+                    "Enter a valid phone number (10-15 digits)."
+            );
+        }
+    }
+
     private static double readMarks() {
 
         while (true) {
 
+            System.out.print("Enter Marks: ");
+
             try {
 
-                double marks = Double.parseDouble(sc.nextLine().trim());
+                double marks = Double.parseDouble(
+                        sc.nextLine().trim()
+                );
 
                 if (Double.isFinite(marks) && marks >= 0 && marks <= 100) {
                     return marks;
                 }
 
-                System.out.print("Enter marks between 0 and 100: ");
+                System.out.println("Enter marks between 0 and 100.");
 
             } catch (NumberFormatException e) {
 
-                System.out.print("Please enter valid marks: ");
+                System.out.println("Please enter valid numerical marks.");
             }
         }
     }
