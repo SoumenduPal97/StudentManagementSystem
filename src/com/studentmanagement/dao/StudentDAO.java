@@ -126,4 +126,48 @@ public class StudentDAO {
             return ps.executeUpdate() > 0;
         }
     }
+
+    public List<Student> searchStudents(String keyword)
+            throws SQLException {
+
+        List<Student> students = new ArrayList<>();
+
+        String sql = "SELECT * FROM students "
+                + "WHERE roll_number LIKE ? "
+                + "OR name LIKE ? "
+                + "OR email LIKE ? "
+                + "OR phone LIKE ? "
+                + "OR course LIKE ? "
+                + "ORDER BY name ASC";
+
+        String searchPattern = "%" + keyword.trim() + "%";
+
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            for (int i = 1; i <= 5; i++) {
+                ps.setString(i, searchPattern);
+            }
+
+            try (ResultSet rs = ps.executeQuery()) {
+
+                while (rs.next()) {
+
+                    Student student = new Student(
+                            rs.getString("roll_number"),
+                            rs.getString("name"),
+                            rs.getString("email"),
+                            rs.getString("phone"),
+                            rs.getString("course"),
+                            rs.getDouble("marks")
+                    );
+
+                    students.add(student);
+                }
+            }
+        }
+
+        return students;
+    }
+
 }

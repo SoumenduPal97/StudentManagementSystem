@@ -27,6 +27,7 @@ public class StudentManagementGUI extends JFrame {
     private final JTextField phoneField = new JTextField(15);
     private final JTextField courseField = new JTextField(15);
     private final JTextField marksField = new JTextField(15);
+    private final JTextField searchField = new JTextField(25);
 
     private final DefaultTableModel tableModel =
             new DefaultTableModel(
@@ -133,7 +134,7 @@ public class StudentManagementGUI extends JFrame {
         JButton addButton = new JButton("Add Student");
         JButton updateButton = new JButton("Update Student");
         JButton deleteButton = new JButton("Delete Student");
-        JButton searchButton = new JButton("Search Student");
+        JButton searchButton = new JButton("Advanced Search");
         JButton refreshButton = new JButton("Show All");
         JButton clearButton = new JButton("Clear");
         JButton changePasswordButton = new JButton("Change Password");
@@ -165,6 +166,21 @@ public class StudentManagementGUI extends JFrame {
         buttonPanel.add(clearButton);
         buttonPanel.add(changePasswordButton);
         buttonPanel.add(logoutButton);
+
+        
+JPanel searchPanel = new JPanel(new BorderLayout(10, 5));
+searchPanel.setOpaque(false);
+
+JLabel searchLabel = new JLabel(
+        "Search by Roll Number, Name, Email, Phone or Course:"
+);
+
+searchLabel.setFont(new Font("Arial", Font.BOLD, 13));
+
+searchPanel.add(searchLabel, BorderLayout.WEST);
+searchPanel.add(searchField, BorderLayout.CENTER);
+
+topPanel.add(searchPanel, BorderLayout.NORTH);
 
         topPanel.add(formPanel, BorderLayout.CENTER);
         topPanel.add(buttonPanel, BorderLayout.SOUTH);
@@ -372,34 +388,29 @@ public class StudentManagementGUI extends JFrame {
         }
     }
 
-    private void searchStudent() {
+    
+private void searchStudent() {
 
-        String roll = rollField.getText().trim();
+    String keyword = searchField.getText().trim();
 
-        if (roll.isEmpty()) {
+    if (keyword.isEmpty()) {
 
-            JOptionPane.showMessageDialog(
-                    this, "Enter a roll number to search."
-            );
+        JOptionPane.showMessageDialog(
+                this,
+                "Enter something to search."
+        );
 
-            return;
-        }
+        return;
+    }
 
-        try {
+    try {
 
-            Student student = studentDAO.searchStudent(roll);
+        List<Student> students =
+                studentDAO.searchStudents(keyword);
 
-            tableModel.setRowCount(0);
+        tableModel.setRowCount(0);
 
-            if (student == null) {
-
-                JOptionPane.showMessageDialog(
-                        this, "Student not found."
-                );
-
-                clearFields();
-                return;
-            }
+        for (Student student : students) {
 
             tableModel.addRow(new Object[]{
                     student.getRollNumber(),
@@ -409,13 +420,23 @@ public class StudentManagementGUI extends JFrame {
                     student.getCourse(),
                     String.format("%.2f", student.getMarks())
             });
-
-            fillFields(student);
-
-        } catch (SQLException e) {
-            showDatabaseError(e);
         }
+
+        if (students.isEmpty()) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "No matching students found."
+            );
+
+        }
+
+    } catch (SQLException e) {
+
+        showDatabaseError(e);
     }
+}
+
 
     private void updateStudent() {
 
@@ -678,6 +699,7 @@ private void logout() {
         phoneField.setText("");
         courseField.setText("");
         marksField.setText("");
+        searchField.setText("");
 
         studentTable.clearSelection();
     }
