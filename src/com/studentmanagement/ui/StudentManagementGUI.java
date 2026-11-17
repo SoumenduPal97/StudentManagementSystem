@@ -1,6 +1,8 @@
 
+
 package com.studentmanagement.ui;
 
+import com.studentmanagement.model.Admin;
 import com.studentmanagement.dao.StudentDAO;
 import com.studentmanagement.model.Student;
 
@@ -13,6 +15,7 @@ import java.util.List;
 public class StudentManagementGUI extends JFrame {
 
     private final StudentDAO studentDAO = new StudentDAO();
+    private final Admin currentAdmin;
 
     private final JTextField rollField = new JTextField(15);
     private final JTextField nameField = new JTextField(15);
@@ -36,7 +39,15 @@ public class StudentManagementGUI extends JFrame {
 
     private final JTable studentTable = new JTable(tableModel);
 
-    public StudentManagementGUI() {
+    public StudentManagementGUI(Admin admin) {
+
+    if (admin == null) {
+        throw new IllegalArgumentException(
+                "Authenticated administrator required."
+        );
+    }
+
+    this.currentAdmin = admin;
 
         setTitle("Student Management System - Version 2.0");
         setSize(1100, 720);
@@ -116,6 +127,7 @@ public class StudentManagementGUI extends JFrame {
         JButton searchButton = new JButton("Search Student");
         JButton refreshButton = new JButton("Show All");
         JButton clearButton = new JButton("Clear");
+        JButton logoutButton = new JButton("Logout");
 
         styleButton(addButton, new Color(46, 125, 50));
         styleButton(updateButton, new Color(30, 136, 229));
@@ -123,6 +135,7 @@ public class StudentManagementGUI extends JFrame {
         styleButton(searchButton, new Color(123, 77, 180));
         styleButton(refreshButton, new Color(90, 100, 110));
         styleButton(clearButton, new Color(100, 100, 100));
+        styleButton(logoutButton, new Color(183, 28, 28));
 
         addButton.addActionListener(e -> addStudent());
         updateButton.addActionListener(e -> updateStudent());
@@ -130,6 +143,7 @@ public class StudentManagementGUI extends JFrame {
         searchButton.addActionListener(e -> searchStudent());
         refreshButton.addActionListener(e -> refreshStudents());
         clearButton.addActionListener(e -> clearFields());
+        logoutButton.addActionListener(e -> logout());
 
         buttonPanel.add(addButton);
         buttonPanel.add(updateButton);
@@ -137,6 +151,7 @@ public class StudentManagementGUI extends JFrame {
         buttonPanel.add(searchButton);
         buttonPanel.add(refreshButton);
         buttonPanel.add(clearButton);
+        buttonPanel.add(logoutButton);
 
         topPanel.add(formPanel, BorderLayout.CENTER);
         topPanel.add(buttonPanel, BorderLayout.SOUTH);
@@ -492,6 +507,28 @@ public class StudentManagementGUI extends JFrame {
         marksField.setText(String.valueOf(student.getMarks()));
     }
 
+private void logout() {
+
+    int confirmation = JOptionPane.showConfirmDialog(
+            this,
+            "Are you sure you want to log out?",
+            "Confirm Logout",
+            JOptionPane.YES_NO_OPTION
+    );
+
+    if (confirmation == JOptionPane.YES_OPTION) {
+
+        dispose();
+
+        SwingUtilities.invokeLater(() -> {
+
+            AdminLogin login = new AdminLogin();
+            login.setVisible(true);
+
+        });
+    }
+}
+
     private void clearFields() {
 
         rollField.setText("");
@@ -514,13 +551,4 @@ public class StudentManagementGUI extends JFrame {
         );
     }
 
-    public static void main(String[] args) {
-
-        SwingUtilities.invokeLater(() -> {
-
-            StudentManagementGUI gui = new StudentManagementGUI();
-            gui.setVisible(true);
-
-        });
-    }
 }
