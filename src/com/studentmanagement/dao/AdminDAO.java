@@ -126,5 +126,100 @@ public class AdminDAO {
 
         return null;
     }
+
+    public boolean changePassword(
+            String username,
+            char[] currentPassword,
+            char[] newPassword
+    ) throws SQLException, GeneralSecurityException {
+
+        if (username == null || username.trim().isEmpty()
+                || currentPassword == null || newPassword == null) {
+            return false;
+        }
+
+        if (newPassword.length < 12) {
+            throw new IllegalArgumentException(
+                    "New password must contain at least 12 characters."
+            );
+        }
+
+        String selectSQL =
+                "SELECT admin_id, salt, password_hash, iterations "
+                + "FROM admins WHERE username = ?";
+
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement select =
+                     con.prepareStatement(selectSQL)) {
+
+            select.setString(1, username.trim());
+
+            try (ResultSet rs = select.executeQuery()) {
+
+                if (!rs.next()) {
+                    return false;
+                }
+
+                int adminId = rs.getInt("admin_id");
+                String oldSalt = rs.getString("salt");
+                String oldHash = rs.getString("password_hash");
+                int iterations = rs.getInt("iterations");
+
+                if (iterations != PasswordUtil.getIterations()) {
+                    throw new SQLException(
+                            "Unsupported password hashing configuration."
+                    );
+                }
+
+                // Verify current password
+                boolean currentValid = PasswordUtil.verifyPassword(
+                        currentPassword,
+                        oldSalt,
+                        oldHash,
+                        iterations
+                );
+
+                if (!currentValid) {
+                    return false;
+                }
+
+                // Prevent reusing the current password
+                if (PasswordUtil.verifyPassword(
+                        newPassword, oldSalt, oldHash, iterations)) {
+
+                    throw new IllegalArgumentException(
+                            "New password must be different from the current password."
+                    );
+                }
+
+                // Generate a fresh salt and hash
+                String newSalt = PasswordUtil.generateSalt();
+
+                String newHash = PasswordUtil.hashPassword(
+                        newPassword,
+                        newSalt,
+                        iterations
+                );
+
+                String updateSQL =
+                        "UPDATE admins SET salt = ?, password_hash = ?, "
+                        + "iterations = ? "
+                        + "WHERE admin_id = ? AND password_hash = ?";
+
+                try (PreparedStatement update =
+                             con.prepareStatement(updateSQL)) {
+
+                    update.setString(1, newSalt);
+                    update.setString(2, newHash);
+                    update.setInt(3, iterations);
+                    update.setInt(4, adminId);
+                    update.setString(5, oldHash);
+
+                    return update.executeUpdate() > 0;
+                }
+            }
+        }
+    }
+
 }
 

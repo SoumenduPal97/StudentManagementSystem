@@ -2,8 +2,11 @@
 
 package com.studentmanagement.ui;
 
+import java.security.GeneralSecurityException;
+import java.util.Arrays;
 import com.studentmanagement.model.Admin;
 import com.studentmanagement.dao.StudentDAO;
+import com.studentmanagement.dao.AdminDAO;
 import com.studentmanagement.model.Student;
 
 import javax.swing.*;
@@ -15,6 +18,7 @@ import java.util.List;
 public class StudentManagementGUI extends JFrame {
 
     private final StudentDAO studentDAO = new StudentDAO();
+    private final AdminDAO adminDAO = new AdminDAO();
     private final Admin currentAdmin;
 
     private final JTextField rollField = new JTextField(15);
@@ -116,9 +120,14 @@ public class StudentManagementGUI extends JFrame {
         formPanel.add(createFieldPanel("Course", courseField));
         formPanel.add(createFieldPanel("Marks", marksField));
 
-        JPanel buttonPanel = new JPanel(
-                new FlowLayout(FlowLayout.CENTER, 8, 5)
-        );
+       JPanel buttonPanel = new JPanel(new GridLayout(2, 4, 10, 10));
+        
+
+
+    buttonPanel.setOpaque(false);
+    buttonPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        
+
         buttonPanel.setOpaque(false);
 
         JButton addButton = new JButton("Add Student");
@@ -127,6 +136,7 @@ public class StudentManagementGUI extends JFrame {
         JButton searchButton = new JButton("Search Student");
         JButton refreshButton = new JButton("Show All");
         JButton clearButton = new JButton("Clear");
+        JButton changePasswordButton = new JButton("Change Password");
         JButton logoutButton = new JButton("Logout");
 
         styleButton(addButton, new Color(46, 125, 50));
@@ -135,6 +145,7 @@ public class StudentManagementGUI extends JFrame {
         styleButton(searchButton, new Color(123, 77, 180));
         styleButton(refreshButton, new Color(90, 100, 110));
         styleButton(clearButton, new Color(100, 100, 100));
+        styleButton(changePasswordButton, new Color(0, 121, 107));
         styleButton(logoutButton, new Color(183, 28, 28));
 
         addButton.addActionListener(e -> addStudent());
@@ -143,6 +154,7 @@ public class StudentManagementGUI extends JFrame {
         searchButton.addActionListener(e -> searchStudent());
         refreshButton.addActionListener(e -> refreshStudents());
         clearButton.addActionListener(e -> clearFields());
+        changePasswordButton.addActionListener(e -> changePassword());
         logoutButton.addActionListener(e -> logout());
 
         buttonPanel.add(addButton);
@@ -151,6 +163,7 @@ public class StudentManagementGUI extends JFrame {
         buttonPanel.add(searchButton);
         buttonPanel.add(refreshButton);
         buttonPanel.add(clearButton);
+        buttonPanel.add(changePasswordButton);
         buttonPanel.add(logoutButton);
 
         topPanel.add(formPanel, BorderLayout.CENTER);
@@ -506,6 +519,134 @@ public class StudentManagementGUI extends JFrame {
         courseField.setText(student.getCourse());
         marksField.setText(String.valueOf(student.getMarks()));
     }
+
+private void changePassword() {
+
+    JPasswordField currentPasswordField =
+            new JPasswordField(18);
+
+    JPasswordField newPasswordField =
+            new JPasswordField(18);
+
+    JPasswordField confirmPasswordField =
+            new JPasswordField(18);
+
+    JPanel panel = new JPanel(new GridLayout(0, 1, 5, 5));
+
+    panel.add(new JLabel("Current Password:"));
+    panel.add(currentPasswordField);
+
+    panel.add(new JLabel("New Password (minimum 12 characters):"));
+    panel.add(newPasswordField);
+
+    panel.add(new JLabel("Confirm New Password:"));
+    panel.add(confirmPasswordField);
+
+    int choice = JOptionPane.showConfirmDialog(
+            this,
+            panel,
+            "Change Administrator Password",
+            JOptionPane.OK_CANCEL_OPTION,
+            JOptionPane.PLAIN_MESSAGE
+    );
+
+    if (choice != JOptionPane.OK_OPTION) {
+        return;
+    }
+
+    char[] currentPassword = currentPasswordField.getPassword();
+    char[] newPassword = newPasswordField.getPassword();
+    char[] confirmPassword = confirmPasswordField.getPassword();
+
+    try {
+
+        if (currentPassword.length == 0
+                || newPassword.length == 0
+                || confirmPassword.length == 0) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Please fill in all password fields."
+            );
+
+            return;
+        }
+
+        if (newPassword.length < 12) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "New password must contain at least 12 characters."
+            );
+
+            return;
+        }
+
+        if (!Arrays.equals(newPassword, confirmPassword)) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "New passwords do not match."
+            );
+
+            return;
+        }
+
+        boolean changed = adminDAO.changePassword(
+                currentAdmin.getUsername(),
+                currentPassword,
+                newPassword
+        );
+
+        if (changed) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Password changed successfully!",
+                    "Success",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+
+        } else {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Current password is incorrect.",
+                    "Password Change Failed",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
+
+    } catch (IllegalArgumentException e) {
+
+        JOptionPane.showMessageDialog(
+                this,
+                e.getMessage(),
+                "Invalid Password",
+                JOptionPane.WARNING_MESSAGE
+        );
+
+    } catch (SQLException | GeneralSecurityException e) {
+
+        JOptionPane.showMessageDialog(
+                this,
+                "Unable to change password: " + e.getMessage(),
+                "System Error",
+                JOptionPane.ERROR_MESSAGE
+        );
+
+    } finally {
+
+        Arrays.fill(currentPassword, '\0');
+        Arrays.fill(newPassword, '\0');
+        Arrays.fill(confirmPassword, '\0');
+
+        currentPasswordField.setText("");
+        newPasswordField.setText("");
+        confirmPasswordField.setText("");
+    }
+}
+
 
 private void logout() {
 

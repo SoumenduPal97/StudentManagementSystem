@@ -13,7 +13,7 @@ public class Main {
     private static final Scanner sc = new Scanner(System.in);
     private static final StudentDAO studentDAO = new StudentDAO();
 
-    public static void main(String[] args) {
+    public static void runConsole(String[] args) {
 
         boolean running = true;
 
