@@ -2,6 +2,10 @@
 
 package com.studentmanagement.ui;
 
+import com.studentmanagement.util.CsvExporter;
+
+import java.io.File;
+import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import com.studentmanagement.model.Admin;
@@ -138,10 +142,8 @@ private final JComboBox<String> sortDirectionCombo =
         formPanel.add(createFieldPanel("Course", courseField));
         formPanel.add(createFieldPanel("Marks", marksField));
 
-       JPanel buttonPanel = new JPanel(new GridLayout(2, 4, 10, 10));
-        
-
-
+       JPanel buttonPanel = new JPanel(new GridLayout(0, 4, 10, 10));
+       
     buttonPanel.setOpaque(false);
     buttonPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         
@@ -155,6 +157,7 @@ private final JComboBox<String> sortDirectionCombo =
         JButton refreshButton = new JButton("Show All");
         JButton clearButton = new JButton("Clear");
         JButton changePasswordButton = new JButton("Change Password");
+        JButton exportButton = new JButton("Export CSV");
         JButton logoutButton = new JButton("Logout");
 
         styleButton(addButton, new Color(46, 125, 50));
@@ -164,6 +167,7 @@ private final JComboBox<String> sortDirectionCombo =
         styleButton(refreshButton, new Color(90, 100, 110));
         styleButton(clearButton, new Color(100, 100, 100));
         styleButton(changePasswordButton, new Color(0, 121, 107));
+        styleButton(exportButton, new Color(2, 119, 189));
         styleButton(logoutButton, new Color(183, 28, 28));
 
         addButton.addActionListener(e -> addStudent());
@@ -173,6 +177,7 @@ private final JComboBox<String> sortDirectionCombo =
         refreshButton.addActionListener(e -> refreshStudents());
         clearButton.addActionListener(e -> clearFields());
         changePasswordButton.addActionListener(e -> changePassword());
+        exportButton.addActionListener(e -> exportStudents());
         logoutButton.addActionListener(e -> logout());
 
         buttonPanel.add(addButton);
@@ -182,6 +187,7 @@ private final JComboBox<String> sortDirectionCombo =
         buttonPanel.add(refreshButton);
         buttonPanel.add(clearButton);
         buttonPanel.add(changePasswordButton);
+        buttonPanel.add(exportButton);
         buttonPanel.add(logoutButton);
 
         
@@ -740,6 +746,75 @@ private void resetFilters() {
         courseField.setText(student.getCourse());
         marksField.setText(String.valueOf(student.getMarks()));
     }
+
+    private void exportStudents() {
+
+        JFileChooser chooser = new JFileChooser();
+
+        chooser.setDialogTitle("Export Student Records");
+
+        chooser.setSelectedFile(
+                new File("student-records.csv")
+        );
+
+        int result = chooser.showSaveDialog(this);
+
+        if (result != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+
+        File destination = chooser.getSelectedFile();
+
+        if (!destination.getName().toLowerCase().endsWith(".csv")) {
+
+            destination = new File(
+                    destination.getParentFile(),
+                    destination.getName() + ".csv"
+            );
+        }
+
+        if (destination.exists()) {
+
+            int confirmation = JOptionPane.showConfirmDialog(
+                    this,
+                    "This file already exists. Do you want to replace it?",
+                    "Confirm Overwrite",
+                    JOptionPane.YES_NO_OPTION
+            );
+
+            if (confirmation != JOptionPane.YES_OPTION) {
+                return;
+            }
+        }
+
+        try {
+
+            List<Student> students = studentDAO.getAllStudents();
+
+            CsvExporter.exportStudents(
+                    students,
+                    destination.toPath()
+            );
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    students.size() + " student records exported successfully!\n"
+                            + "Location: " + destination.getAbsolutePath(),
+                    "Export Successful",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+
+        } catch (SQLException | IOException e) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Export failed: " + e.getMessage(),
+                    "Export Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
+    }
+
 
 private void changePassword() {
 
