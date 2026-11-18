@@ -29,6 +29,23 @@ public class StudentManagementGUI extends JFrame {
     private final JTextField marksField = new JTextField(15);
     private final JTextField searchField = new JTextField(25);
 
+private final JTextField courseFilterField = new JTextField(10);
+
+private final JTextField minMarksField = new JTextField(5);
+
+private final JTextField maxMarksField = new JTextField(5);
+
+private final JComboBox<String> sortByCombo =
+        new JComboBox<>(new String[]{
+                "Roll Number", "Name", "Marks", "Course"
+        });
+
+private final JComboBox<String> sortDirectionCombo =
+        new JComboBox<>(new String[]{
+                "Ascending", "Descending"
+        });
+
+
     private final DefaultTableModel tableModel =
             new DefaultTableModel(
                     new String[]{
@@ -179,6 +196,47 @@ searchLabel.setFont(new Font("Arial", Font.BOLD, 13));
 
 searchPanel.add(searchLabel, BorderLayout.WEST);
 searchPanel.add(searchField, BorderLayout.CENTER);
+
+JPanel filterPanel = new JPanel(
+        new FlowLayout(FlowLayout.LEFT, 8, 5)
+);
+
+filterPanel.setOpaque(false);
+
+JButton applyFiltersButton = new JButton("Apply Filters");
+JButton resetFiltersButton = new JButton("Reset Filters");
+
+styleButton(applyFiltersButton, new Color(46, 125, 50));
+styleButton(resetFiltersButton, new Color(90, 100, 110));
+
+filterPanel.add(new JLabel("Course:"));
+filterPanel.add(courseFilterField);
+
+filterPanel.add(new JLabel("Min Marks:"));
+filterPanel.add(minMarksField);
+
+filterPanel.add(new JLabel("Max Marks:"));
+filterPanel.add(maxMarksField);
+
+filterPanel.add(new JLabel("Sort By:"));
+filterPanel.add(sortByCombo);
+
+filterPanel.add(new JLabel("Direction:"));
+filterPanel.add(sortDirectionCombo);
+
+filterPanel.add(applyFiltersButton);
+filterPanel.add(resetFiltersButton);
+
+applyFiltersButton.addActionListener(
+        e -> applyFiltersAndSorting()
+);
+
+resetFiltersButton.addActionListener(
+        e -> resetFilters()
+);
+
+searchPanel.add(filterPanel, BorderLayout.SOUTH);
+
 
 topPanel.add(searchPanel, BorderLayout.NORTH);
 
@@ -436,6 +494,148 @@ private void searchStudent() {
         showDatabaseError(e);
     }
 }
+
+private void applyFiltersAndSorting() {
+
+    String course = courseFilterField.getText().trim();
+
+    String minText = minMarksField.getText().trim();
+    String maxText = maxMarksField.getText().trim();
+
+    Double minMarks = null;
+    Double maxMarks = null;
+
+    try {
+
+        if (!minText.isEmpty()) {
+            minMarks = Double.parseDouble(minText);
+        }
+
+        if (!maxText.isEmpty()) {
+            maxMarks = Double.parseDouble(maxText);
+        }
+
+    } catch (NumberFormatException e) {
+
+        JOptionPane.showMessageDialog(
+                this,
+                "Please enter valid numerical marks."
+        );
+
+        return;
+    }
+
+    if (minMarks != null &&
+            (!Double.isFinite(minMarks)
+                    || minMarks < 0 || minMarks > 100)) {
+
+        JOptionPane.showMessageDialog(
+                this,
+                "Minimum marks must be between 0 and 100."
+        );
+
+        return;
+    }
+
+    if (maxMarks != null &&
+            (!Double.isFinite(maxMarks)
+                    || maxMarks < 0 || maxMarks > 100)) {
+
+        JOptionPane.showMessageDialog(
+                this,
+                "Maximum marks must be between 0 and 100."
+        );
+
+        return;
+    }
+
+    if (minMarks != null && maxMarks != null
+            && minMarks > maxMarks) {
+
+        JOptionPane.showMessageDialog(
+                this,
+                "Minimum marks cannot exceed maximum marks."
+        );
+
+        return;
+    }
+
+    String sortBy;
+
+    switch ((String) sortByCombo.getSelectedItem()) {
+
+        case "Name":
+            sortBy = "name";
+            break;
+
+        case "Marks":
+            sortBy = "marks";
+            break;
+
+        case "Course":
+            sortBy = "course";
+            break;
+
+        default:
+            sortBy = "roll_number";
+    }
+
+    String direction =
+            "Descending".equals(sortDirectionCombo.getSelectedItem())
+                    ? "DESC" : "ASC";
+
+    try {
+
+        List<Student> students =
+                studentDAO.filterAndSortStudents(
+                        course,
+                        minMarks,
+                        maxMarks,
+                        sortBy,
+                        direction
+                );
+
+        tableModel.setRowCount(0);
+
+        for (Student student : students) {
+
+            tableModel.addRow(new Object[]{
+                    student.getRollNumber(),
+                    student.getName(),
+                    student.getEmail(),
+                    student.getPhone(),
+                    student.getCourse(),
+                    String.format("%.2f", student.getMarks())
+            });
+        }
+
+        if (students.isEmpty()) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "No matching students found."
+            );
+        }
+
+    } catch (SQLException e) {
+
+        showDatabaseError(e);
+    }
+}
+
+private void resetFilters() {
+
+    courseFilterField.setText("");
+    minMarksField.setText("");
+    maxMarksField.setText("");
+
+    sortByCombo.setSelectedItem("Roll Number");
+    sortDirectionCombo.setSelectedItem("Ascending");
+
+    refreshStudents();
+}
+
+
 
 
     private void updateStudent() {

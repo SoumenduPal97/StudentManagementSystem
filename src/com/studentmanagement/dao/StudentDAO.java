@@ -170,4 +170,125 @@ public class StudentDAO {
         return students;
     }
 
+    public List<Student> filterAndSortStudents(
+            String course,
+            Double minMarks,
+            Double maxMarks,
+            String sortBy,
+            String sortDirection
+    ) throws SQLException {
+
+        if (minMarks != null &&
+                (minMarks < 0 || minMarks > 100)) {
+            throw new IllegalArgumentException(
+                    "Minimum marks must be between 0 and 100."
+            );
+        }
+
+        if (maxMarks != null &&
+                (maxMarks < 0 || maxMarks > 100)) {
+            throw new IllegalArgumentException(
+                    "Maximum marks must be between 0 and 100."
+            );
+        }
+
+        if (minMarks != null && maxMarks != null
+                && minMarks > maxMarks) {
+            throw new IllegalArgumentException(
+                    "Minimum marks cannot exceed maximum marks."
+            );
+        }
+
+        List<Student> students = new ArrayList<>();
+        List<Object> parameters = new ArrayList<>();
+
+        StringBuilder sql = new StringBuilder(
+                "SELECT * FROM students WHERE 1=1"
+        );
+
+        if (course != null && !course.trim().isEmpty()) {
+
+            sql.append(" AND course LIKE ?");
+            parameters.add("%" + course.trim() + "%");
+        }
+
+        if (minMarks != null) {
+
+            sql.append(" AND marks >= ?");
+            parameters.add(minMarks);
+        }
+
+        if (maxMarks != null) {
+
+            sql.append(" AND marks <= ?");
+            parameters.add(maxMarks);
+        }
+
+        String sortColumn;
+
+        switch (sortBy == null ? "roll_number"
+                : sortBy.toLowerCase()) {
+
+            case "name":
+                sortColumn = "name";
+                break;
+
+            case "marks":
+                sortColumn = "marks";
+                break;
+
+            case "course":
+                sortColumn = "course";
+                break;
+
+            case "roll_number":
+                sortColumn = "roll_number";
+                break;
+
+            default:
+                throw new IllegalArgumentException(
+                        "Invalid sorting field."
+                );
+        }
+
+        String direction =
+                sortDirection != null
+                        && sortDirection.equalsIgnoreCase("DESC")
+                        ? "DESC" : "ASC";
+
+        sql.append(" ORDER BY ")
+                .append(sortColumn)
+                .append(" ")
+                .append(direction);
+
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps =
+                     con.prepareStatement(sql.toString())) {
+
+            for (int i = 0; i < parameters.size(); i++) {
+                ps.setObject(i + 1, parameters.get(i));
+            }
+
+            try (ResultSet rs = ps.executeQuery()) {
+
+                while (rs.next()) {
+
+                    Student student = new Student(
+                            rs.getString("roll_number"),
+                            rs.getString("name"),
+                            rs.getString("email"),
+                            rs.getString("phone"),
+                            rs.getString("course"),
+                            rs.getDouble("marks")
+                    );
+
+                    students.add(student);
+                }
+            }
+        }
+
+        return students;
+    }
+
+
 }
