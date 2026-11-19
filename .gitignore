@@ -2,3 +2,4 @@
 db.properties
 out/
 *.class
+test-out/
