@@ -3,3 +3,7 @@ db.properties
 out/
 *.class
 test-out/
+target/
+.vscode/
+dependency-reduced-pom.xml
+lib/junit-platform-console-standalone-1.14.4.jar
